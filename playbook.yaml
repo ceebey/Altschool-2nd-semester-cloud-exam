@@ -1,0 +1,16 @@
+---
+- name: Provision Slave
+  hosts: all
+  tasks:
+    - name: Copy and execute script for setting up LAMP into the slave VM
+      script: /home/vagrant/LAMP.sh
+
+    - name: Copy and execute script for setting up Laravel application into the slave VM
+      script: /home/vagrant/deploy.sh
+    
+    - name: Cron job to check server's uptime at 12AM daily
+      cron:
+        name: check_uptime
+        minute: "0"
+        hour: "0"
+        job: "uptime >> /var/log/uptime.log"

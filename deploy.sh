@@ -1,121 +1,114 @@
 #!/bin/bash
+# clone the repo
+echo "cloning the repo"
+git clone https://github.com/laravel/laravel
+sleep 5
 
-# Function to configure LAMP stack 
-  function configure_lamp {
-               # Install Apache
-                 apt-get update
-                 apt-get install -y apache2
+# enter into the repo
+echo 
+cd laravel
 
-              # Install MySQL and secure installation
-              apt-get install -y mysql-server
-
-               #Install PHP (with apache and my SQL)
-                sudo apt update
-                sudo apt install software-properties-common
-                sudo add-apt-repository ppa:ondrej/php -y
-                sudo apt update
-                sudo apt install php8.1 -y
-                sudo apt install php8.1 php8.1-curl libapache2-mod-php8.1 php8.1-bcmath php8.1-zip php8.1-mbstring php8.1-mysql php8.1-gd php8.1-xml php8.1-tokenizer php-common php-json -y
-                 
-                #deploy the test file inside the default document root of Apache server
-                cd /var/www/html
-                echo "creating php test file"
-                cat <<EOF >> test.php
-                <?php
-                phpinfo();
-                ?>"
-EOF
-                # You can access the test.php on both nodes by using:
-                #Master Node: http://master-node-ip/test.php
-                #Slave Node: http://slave-node-ip/test.php
-
-               # Enable Apache mod_rewrite
-                # a2enmod rewrite
-
-               # Restart Apache
-               systemctl restart apache2
-     }
+# check directory
+echo $(pwd)
+sleep 5
 
 
-# LAMP Stack Deployment 
- configure_lamp
-
-#Cloning the Laravel repo
-#first install git and composer command
-sudo apt-get update 
-sudo apt-get install git composer -y
-
-#Deploy the laravel inside default document root of apache
-# cd /var/www/
-sudo touch /var/www/laravel
-echo "Cloning the laravel repo"
-sudo git clone https://github.com/laravel/laravel /var/www/laravel
-# sudo chown -R "$(id -un)" laravel
-# cd laravel
-apt-get install php-xml php-curl -y
-php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-php -r "if (hash_file('sha384', 'composer-setup.php') === 'e21205b207c3ff031906575712edab6f13eb0b361f2085f1f1237b7126d785e826a450292b6cfd1d64d92e6563bbde02') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-php composer-setup.php
-php -r "unlink('composer-setup.php');"
-sudo mv composer.phar /usr/local/bin/composer
-composer install
-composer update
+# rename .env 
+echo "renaming .env"
 mv .env.example .env
-php artisan key:generator
+
+# install composer dependencies
+echo "install php and composer dependencies"
+sudo apt-get install php-xml php-curl -y
+sudo apt install php-cli php-json php-common curl php-mbstring php-zip unzip zip unzip php-curl php-xml -y
+sleep 5
+
+# install composer
+echo install composer
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+
+# update the repo
+echo "installing repo dependencies"
+composer install
+
+# update the repo
+composer update
+
+# generate app ket
+echo "create appkey"
+php artisan key:generate
 
 
-#Configure apache for laravel
-cd /etc/apache2/sites-available/
-sudo touch /etc/apache2/sites-available/laravel.conf
-sudo bash -c 'cat <<EOF >> laravel.conf
-               <VirtualHost *:80>
-                   ServerAdmin admin@example.com
-                   ServerName laravel.com
-                   DocumentRoot /var/www/laravel/public
-     
-                   <Directory /var/www/laravel/public>
-                       AllowOverride All
-                       Require all granted
-                       #extra config to disable default index.html
-                       DirectoryIndex disabled
-                       DirectoryIndex index.php
-                   </Directory>
-                   ErrorLog ${APACHE_LOG_DIR}/error.log
-                   CustomLog ${APACHE_LOG_DIR}/access.log combined
-                </VirtualHost>
-EOF'
+# disable the default apache page
+echo "disable default apache page"
+sudo a2dissite 000-default.conf
 
-#Activate Apache rewrite module and Laravel virtual host config.
-# sudo a2enmod rewrite
-sudo a2ensite laravel.conf
+# navigate to sites-availble
+echo "navigating to sites-available"
+cd /etc/apache2/sites-available
 
-echo "Applying changes..."
-sudo service apache2 restart
+# check directory
+echo $(pwd)
 
-#Adding virtual host to hosts configuration file. change ip address to your machine's ip
-# sudo bash -c 'cat <<EOF >> /etc/hosts
-#             192.168.56.7  laravel.com
-# EOF'
+# create your site file
+echo "create website conf file"
+sudo touch laravel.conf
 
-#MySQL configuration
-#login to MySQL to create a datebase
-# mysql -u root -p
-# echo "logging into MySQL"
-# CREATE DATABASE Laravel;
-# SHOW DATABASES;
-# #edit the .env file and define database- By default, Laravel's .env configuration file specifies that Laravel will be interacting with a MySQL database and will access the database at 127.0.0.1.
-# cd /var/www/html/laravel
-# sudo cat <<EOF >> .env
-#                     APP_URL=https://laravel.com
-#                     DB_CONNECTION=mysql
-#                     DB_HOST=127.0.01
-#                     DB_PORT=3306
-#                     DB_DATABASE=Laravel
-#                     DB_USERNAME=root
-#                     DB_PASSWORD=             
-# EOF
+# update the content
+echo "update .conf file"
+sudo sed -n 'w laravel.conf' <<EOF
+<VirtualHost *:80>
+    ServerAdmin chinwoke@gmail.com
+    ServerName laravel.local
 
-#create application database table
+    DocumentRoot /var/www/laravel/public
+
+    <Directory /var/www/laravel/public>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog \${APACHE_LOG_DIR}/laravel-error.log
+    CustomLog \${APACHE_LOG_DIR}/laravel-access.log combined
+
+    <IfModule mod_dir.c>
+        DirectoryIndex index.php
+    </IfModule>
+</VirtualHost>
+EOF
 
 
-#to test the app in your browser visit laravel.com
+# enable the site
+echo "enabling new site"
+sudo a2ensite laravel
+
+# create the site directory
+echo "creating the site directory"
+sudo mkdir -p /var/www/laravel
+
+# copy the content to site directory
+cd /home/vagrant
+echo $(pwd)
+sudo cp -r laravel/. /var/www/laravel/
+
+# go back to the directory
+echo "grant permissions"
+cd /var/www/laravel
+echo $(pwd)
+
+# set permission for the files
+sudo chown -R vagrant:www-data /var/www/laravel/
+sudo find /var/www/laravel/ -type f -exec chmod 664 {} \;
+sudo find /var/www/laravel/ -type d -exec chmod 775 {} \;
+sudo chgrp -R www-data storage bootstrap/cache
+sudo chmod -R ug+rwx storage bootstrap/cache
+
+# reload apache
+echo "reload apache"
+sudo systemctl reload apache2
+
+# done
+echo 'webserver is up vist http://192.168.56.7 to view website'
+#127.0.0.1
