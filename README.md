@@ -68,8 +68,8 @@ Before using this playbook, ensure that you have the following:
 
 - Ansible installed on your control machine. You can follow the ansible documentation on how to setup [here](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
 - Proper SSH access to the target host(s). In this case, Slave VM
-- The `LAMP.sh` and `deploy.sh` scripts are available on the control machine. (INSERT PROVISIONING SCREENSHOT OF MASTER)
-- Properly configured inventory file (hosts file) to specify the target host. After the ansible installation, the hosts file can be found in the /etc/ansible directory. it should contain the ip address of the target host.(INSERT ETC/ANSIBLE IMAGE)
+- The `LAMP.sh` and `deploy.sh` scripts are available on the control machine. 
+- Properly configured inventory file (hosts file) to specify the target host. After the ansible installation, the hosts file can be found in the /etc/ansible directory. it should contain the ip address of the target host.
 
 ## Usage
 
